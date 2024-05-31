@@ -1,0 +1,59 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "anyio-serial"
+dynamic = ["version"]
+description = ''
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+keywords = []
+authors = [
+  { name = "GraysonBellamy", email = "grayson.bellamy@ul.org" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = [
+  "anyio>=4.0.0",
+]
+
+[project.urls]
+Documentation = "https://github.com/ulfsri/anyio-serial#readme"
+Issues = "https://github.com/ulfsri/anyio-serial/issues"
+Source = "https://github.com/ulfsri/anyio-serial"
+
+[tool.hatch.version]
+path = "src/anyio_serial/__about__.py"
+
+[tool.hatch.envs.types]
+extra-dependencies = [
+  "mypy>=1.0.0",
+]
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:src/anyio_serial tests}"
+
+[tool.coverage.run]
+source_pkgs = ["anyio_serial", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/anyio_serial/__about__.py",
+]
+
+[tool.coverage.paths]
+anyio_serial = ["src/anyio_serial", "*/anyio-serial/src/anyio_serial"]
+tests = ["tests", "*/anyio-serial/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
