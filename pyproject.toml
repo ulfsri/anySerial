@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "anyio-serial"
+name = "anyserial"
 dynamic = ["version"]
 description = ''
 readme = "README.md"
@@ -25,31 +25,31 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/ulfsri/anyio-serial#readme"
-Issues = "https://github.com/ulfsri/anyio-serial/issues"
-Source = "https://github.com/ulfsri/anyio-serial"
+Documentation = "https://github.com/ulfsri/anyserial#readme"
+Issues = "https://github.com/ulfsri/anyserial/issues"
+Source = "https://github.com/ulfsri/anyserial"
 
 [tool.hatch.version]
-path = "src/anyio_serial/__about__.py"
+path = "src/anyserial/__about__.py"
 
 [tool.hatch.envs.types]
 extra-dependencies = [
   "mypy>=1.0.0",
 ]
 [tool.hatch.envs.types.scripts]
-check = "mypy --install-types --non-interactive {args:src/anyio_serial tests}"
+check = "mypy --install-types --non-interactive {args:src/anyserial tests}"
 
 [tool.coverage.run]
-source_pkgs = ["anyio_serial", "tests"]
+source_pkgs = ["anyserial", "tests"]
 branch = true
 parallel = true
 omit = [
-  "src/anyio_serial/__about__.py",
+  "src/anyserial/__about__.py",
 ]
 
 [tool.coverage.paths]
-anyio_serial = ["src/anyio_serial", "*/anyio-serial/src/anyio_serial"]
-tests = ["tests", "*/anyio-serial/tests"]
+anyserial = ["src/anyserial", "*/anyserial/src/anyserial"]
+tests = ["tests", "*/anyserial/tests"]
 
 [tool.coverage.report]
 exclude_lines = [
