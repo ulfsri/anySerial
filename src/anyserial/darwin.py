@@ -2,7 +2,6 @@ import array
 import fcntl
 import os
 
-from anyio import ClosedResourceError
 
 from .posix import PosixSerialStream
 

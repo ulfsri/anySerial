@@ -34,7 +34,16 @@ path = "src/anyserial/__about__.py"
 
 [tool.hatch.envs.types]
 extra-dependencies = [
-  "mypy>=1.0.0",
+  "pre-commit>=3.4.0",
+  "mypy>=1.5.1",
+  "ruff>=0.0.287",
+  "slotscheck",
+  "types-click",
+  "types-passlib",
+  "types-python-jose",
+  "types-pyyaml",
+  "types-redis",
+  "pylint",
 ]
 [tool.hatch.envs.types.scripts]
 check = "mypy --install-types --non-interactive {args:src/anyserial tests}"

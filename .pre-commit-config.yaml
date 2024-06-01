@@ -2,17 +2,22 @@ default_stages: [commit, push]
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.5.0
+    rev: v4.6.0
     hooks:
-      - id: check-yaml
+      - id: check-ast
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: debug-statements
       - id: end-of-file-fixer
-        exclude: LICENSE
+      - id: mixed-line-ending
+      - id: trailing-whitespace
 
   - repo: local
     hooks:
       - id: pyupgrade
         name: pyupgrade
-        entry: poetry run pyupgrade --py39-plus
+        entry: hatch env run --env types -- python --version
         types: [python]
         language: system
 
