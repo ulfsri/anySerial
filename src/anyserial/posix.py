@@ -15,23 +15,18 @@ from .abstract import AbstractSerialStream, Parity, StopBits, FlowControl
 TIOCMGET = getattr(termios, "TIOCMGET", 0x5415)
 TIOCMBIS = getattr(termios, "TIOCMBIS", 0x5416)
 TIOCMBIC = getattr(termios, "TIOCMBIC", 0x5417)
-BUF_ZERO = pack("@I", 0)
+BUF_ZERO = pack("I", 0)
 
 BIT_RTS = getattr(termios, "TIOCM_RTS", 0x004)
-BUF_RTS = pack("@I", BIT_RTS)
-
 BIT_CTS = getattr(termios, "TIOCM_CTS", 0x020)
-BUF_CTS = pack("@I", BIT_CTS)
 
-if hasattr(termios, 'TIOCINQ'):
-    TIOCINQ = termios.TIOCINQ
-else:
-    TIOCINQ = getattr(termios, 'FIONREAD', 0x541B)
-TIOCM_zero_str = pack('I', 0)
+TIOCINQ = getattr(termios, "TIOCINQ", getattr(termios, 'FIONREAD', 0x541B))
+TIOCM_ZERO = pack("I", 0)
 
 class PosixSerialStream(AbstractSerialStream):
     CMSPAR = 0
     BAUDRATE_CONSTANTS: Dict[int, int] = {}
+    BOTHER: Optional[int] = None
     _fd: Optional[int] = None
     _hangup_on_close: bool = True
 
@@ -45,7 +40,7 @@ class PosixSerialStream(AbstractSerialStream):
         """
         Return the number of bytes currently in the input buffer.
         """
-        s = fcntl.ioctl(self.fd, TIOCINQ, TIOCM_zero_str)
+        s = fcntl.ioctl(self.fd, TIOCINQ, TIOCM_ZERO)
         return unpack("I", s)[0]
     
     async def aclose(self) -> None:
@@ -107,11 +102,11 @@ class PosixSerialStream(AbstractSerialStream):
         self._hangup_on_close = value
         self._configure_port()
     
-    def _set_bit(self, bit: bytes, value: bool) -> None:
-        fcntl.ioctl(self.fd, TIOCMBIS if value else TIOCMBIC, bit)
+    def _set_bit(self, bit: int, value: bool) -> None:
+        fcntl.ioctl(self.fd, TIOCMBIS if value else TIOCMBIC, pack("I", bit))
 
-    def _get_bit(self, bit: bytes) -> bool:
-        return bool(unpack("@I", fcntl.ioctl(self.fd, TIOCMGET, BUF_ZERO))[0] & unpack("@I", bit)[0])
+    def _get_bit(self, bit: int) -> bool:
+        return bool(unpack("I", fcntl.ioctl(self.fd, TIOCMGET, BUF_ZERO))[0] & bit)
     
     def _configure_port(self, force_update: bool = False) -> None:
         try:
@@ -153,14 +148,14 @@ class PosixSerialStream(AbstractSerialStream):
 
         custom_baud = False
         try:
-            ispeed = ospeed = getattr(termios, f"B{self._baudrate}")
+            ispeed = ospeed = getattr(termios, f"B{self._baudrate}") # See if it's a supported baud rate
         except AttributeError:
             try:
                 ispeed = ospeed = self.BAUDRATE_CONSTANTS[self._baudrate]
             except KeyError:
-                try:
+                if self.BOTHER:
                     ispeed = ospeed = self.BOTHER
-                except NameError:
+                else:
                     ispeed = ospeed = termios.B38400
             
                 custom_baud = True
@@ -182,7 +177,7 @@ class PosixSerialStream(AbstractSerialStream):
         
         iflag &= ~(termios.INPCK | termios.ISTRIP)
         if self._parity == Parity.NONE:
-            cflag &= ~(termios.PARENB | termios.PARODD | termios.CMSPAR)
+            cflag &= ~(termios.PARENB | termios.PARODD | self.CMSPAR)
         elif self._parity == Parity.ODD:
             cflag &= ~self.CMSPAR
             cflag |= termios.PARENB | termios.PARODD

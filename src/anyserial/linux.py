@@ -13,8 +13,7 @@ class LinuxSerialStream(PosixSerialStream):
     """
 
     # Extra termios flags
-    # Use "stick" (mark/space) parity
-    CMSPAR = 0o10000000000
+    CMSPAR = 0o10000000000 # Use "stick" (mark/space) parity
 
     # Baudrate ioctls
     TCGETS2 = 0x802C542A
@@ -65,7 +64,7 @@ class LinuxSerialStream(PosixSerialStream):
         buf = array.array("i", [0] * 64)
         try:
             # get serial_struct
-            fcntl.ioctl(fd, self.TCGETS2, buf)
+            fcntl.ioctl(self.fd, self.TCGETS2, buf)
 
             # set custom speed
             buf[2] &= ~termios.CBAUD
@@ -73,6 +72,9 @@ class LinuxSerialStream(PosixSerialStream):
             buf[self.BAUDRATE_OFFSET] = buf[self.BAUDRATE_OFFSET + 1] = self._baudrate
 
             # set serial_struct
-            fcntl.ioctl(self.fd, self.TCSETS2, buf)
+            assert(fcntl.ioctl(self.fd, self.TCSETS2, buf)==0)
+            fcntl.ioctl(self.fd, self.TCGETS2, buf)
+            if buf[9]!=self._baudrate or buf[10]!=self._baudrate:
+                raise ValueError(f"failed. speed is {buf[9]} {buf[10]}")
         except IOError as ex:
             raise ValueError(f"Failed to set custom baud rate {self._baudrate}: {ex!s}")
