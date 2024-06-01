@@ -23,6 +23,12 @@ BUF_RTS = pack("@I", BIT_RTS)
 BIT_CTS = getattr(termios, "TIOCM_CTS", 0x020)
 BUF_CTS = pack("@I", BIT_CTS)
 
+if hasattr(termios, 'TIOCINQ'):
+    TIOCINQ = termios.TIOCINQ
+else:
+    TIOCINQ = getattr(termios, 'FIONREAD', 0x541B)
+TIOCM_zero_str = pack('I', 0)
+
 class PosixSerialStream(AbstractSerialStream):
     CMSPAR = 0
     BAUDRATE_CONSTANTS: Dict[int, int] = {}
@@ -32,8 +38,15 @@ class PosixSerialStream(AbstractSerialStream):
     @property
     def fd(self) -> int:
         if self._fd is None:
-            raise ValueError("File descriptor is closed")
+            raise ClosedResourceError("File descriptor is closed")
         return self._fd
+    
+    def in_waiting(self) -> int:
+        """
+        Return the number of bytes currently in the input buffer.
+        """
+        s = fcntl.ioctl(self.fd, TIOCINQ, TIOCM_zero_str)
+        return unpack("I", s)[0]
     
     async def aclose(self) -> None:
         self._close()
@@ -41,7 +54,10 @@ class PosixSerialStream(AbstractSerialStream):
     async def aopen(self) -> None:
         if self._fd is not None:
             raise ValueError("File descriptor is already open")
-        self._fd = os.open(self._port, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
+        try:
+            self._fd = os.open(self._port, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
+        except OSError as ex:
+            raise ValueError(f"Failed to open port: {self._port}") from ex
         try:
             self._configure_port()
         except BaseException:
@@ -66,16 +82,14 @@ class PosixSerialStream(AbstractSerialStream):
         termios.tcsendbreak(self.fd, int(duration * 4))
 
     async def _send(self, data: memoryview) -> int:
+        # Need to rewrite this so we don't have to create socket each time. Trio supports passing in file descriptor directly but anyio does not.
+        await anyio.wait_socket_writable(socket.socket(fileno=self.fd))
         return os.write(self.fd, data)
     
     async def _recv(self, max_bytes: int) -> bytes:
         # Need to rewrite this so we don't have to create socket each time. Trio supports passing in file descriptor directly but anyio does not.
         await anyio.wait_socket_readable(socket.socket(fileno=self.fd))
         return os.read(self.fd, max_bytes)
-    
-    async def _wait_writable(self) -> None:
-        # Need to rewrite this so we don't have to create socket each time. Trio supports passing in file descriptor directly but anyio does not.
-        await anyio.wait_socket_writable(socket.socket(fileno=self.fd))
 
     async def get_cts(self) -> bool:
         return self._get_bit(BIT_CTS)
@@ -113,8 +127,11 @@ class PosixSerialStream(AbstractSerialStream):
         else:
             fcntl.flock(fd, fcntl.LOCK_UN)
 
-        orig_attrs = termios.tcgetattr(fd)
-        iflag, oflag, cflag, lflag, ispeed, ospeed, cc = orig_attrs
+        try:
+            orig_attrs = termios.tcgetattr(fd)
+            iflag, oflag, cflag, lflag, ispeed, ospeed, cc = orig_attrs
+        except termios.error as ex:
+            raise ValueError("Failed to get port attributes") from ex
 
         cflag |= termios.CLOCAL | termios.CREAD
         lflag &= ~(
@@ -143,7 +160,7 @@ class PosixSerialStream(AbstractSerialStream):
             except KeyError:
                 try:
                     ispeed = ospeed = self.BOTHER
-                except AttributeError:
+                except NameError:
                     ispeed = ospeed = termios.B38400
             
                 custom_baud = True
@@ -159,7 +176,7 @@ class PosixSerialStream(AbstractSerialStream):
         elif self._stopbits == StopBits.TWO:
             cflag |= termios.CSTOPB
         elif self._stopbits == StopBits.ONE_POINT_FIVE:
-            raise ValueError("1.5 stop bits are not supported on this platform")
+            cflag |= termios.CSTOPB
         else:
             raise ValueError("Invalid stop bits")
         
@@ -182,12 +199,12 @@ class PosixSerialStream(AbstractSerialStream):
         
         if hasattr(termios, "IXANY"):
             if self._flowcontrol == FlowControl.XON_XOFF:
-                iflag |= termios.IXON | termios.IXOFF | termios.IXANY
+                iflag |= (termios.IXON | termios.IXOFF)
             else:
                 iflag &= ~(termios.IXON | termios.IXOFF | termios.IXANY)
         else:
             if self._flowcontrol == FlowControl.XON_XOFF:
-                iflag |= termios.IXON | termios.IXOFF
+                iflag |= (termios.IXON | termios.IXOFF)
             else:
                 iflag &= ~(termios.IXON | termios.IXOFF)
 
@@ -207,13 +224,13 @@ class PosixSerialStream(AbstractSerialStream):
         else:
             cflag &= ~termios.HUPCL
 
-        new_attr = [iflag, oflag, cflag, lflag, ispeed, ospeed, cc]
+        new_attrs = [iflag, oflag, cflag, lflag, ispeed, ospeed, cc]
 
-        if force_update or new_attr != orig_attrs:
-            termios.tcsetattr(fd, termios.TCSANOW, new_attr)
+        if force_update or new_attrs != orig_attrs:
+            termios.tcsetattr(fd, termios.TCSANOW, new_attrs)
         if custom_baud:
-            self._set_special_baudrate(fd, self._baudrate)
+            self._set_special_baudrate(self._baudrate)
 
-    def _set_special_baudrate(self, fd: int, baudrate: int) -> None:
+    def _set_special_baudrate(self, baudrate: int) -> None:
         raise NotImplementedError("Custom baud rates are not supported on this platform")
 

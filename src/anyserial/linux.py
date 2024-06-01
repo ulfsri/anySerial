@@ -19,6 +19,7 @@ class LinuxSerialStream(PosixSerialStream):
     # Baudrate ioctls
     TCGETS2 = 0x802C542A
     TCSETS2 = 0x402C542B
+    BAUDRATE_OFFSET = 9
     BOTHER = 0o010000
 
     BAUDRATE_CONSTANTS = {
@@ -55,10 +56,11 @@ class LinuxSerialStream(PosixSerialStream):
         4000000: 0o010017,
     }
 
-    def _set_special_baudrate(self, fd: int, baudrate: int) -> None:
+    def _set_special_baudrate(self, baudrate: int) -> None:
         """
         Set custom baudrate
         """
+        self._baudrate = baudrate
         # right size is 44 on x86_64, allow for some growth
         buf = array.array("i", [0] * 64)
         try:
@@ -68,9 +70,9 @@ class LinuxSerialStream(PosixSerialStream):
             # set custom speed
             buf[2] &= ~termios.CBAUD
             buf[2] |= self.BOTHER
-            buf[9] = buf[10] = self._baudrate
+            buf[self.BAUDRATE_OFFSET] = buf[self.BAUDRATE_OFFSET + 1] = self._baudrate
 
             # set serial_struct
-            fcntl.ioctl(fd, self.TCSETS2, buf)
+            fcntl.ioctl(self.fd, self.TCSETS2, buf)
         except IOError as ex:
             raise ValueError(f"Failed to set custom baud rate {self._baudrate}: {ex!s}")
