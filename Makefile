@@ -39,27 +39,27 @@ pre-commit-install:
 .PHONY: lint
 lint: 												## Runs pre-commit hooks; includes ruff linting, codespell, black
 	@echo "=> Running pre-commit process"
-	@hatch run dev:pre-commit run --all-files
+	@hatch run pre-commit run --all-files
 	@echo "=> Pre-commit complete"
 
 .PHONY: format
 format: 												## Runs code formatting utilities
 	@echo "=> Running pre-commit process"
-	@hatch run dev:ruff check . --fix
+	@hatch run ruff check . --fix
 	@echo "=> Pre-commit complete"
 
 .PHONY: coverage
 coverage:  											## Run the tests and generate coverage report
 	@echo "=> Running tests with coverage"
-	@hatch run dev:pytest tests --cov=app
-	@hatch run dev:coverage html
-	@hatch run dev:coverage xml
+	@hatch run pytest tests --cov=app
+	@hatch run coverage html
+	@hatch run coverage xml
 	@echo "=> Coverage report generated"
 
 .PHONY: test
 test:  												## Run the tests
 	@echo "=> Running test cases"
-	@hatch run dev:pytest tests
+	@hatch run pytest tests
 	@echo "=> Tests complete"
 
 #* Cleaning
