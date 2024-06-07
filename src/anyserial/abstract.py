@@ -130,7 +130,7 @@ class AbstractSerialStream(ByteStream, ABC):
     # async def set_flow_control(self, flow_control: FlowControl) -> None:
     #     pass
 
-    async def recieve(self, max_bytes: int) -> bytes:
+    async def receive(self, max_bytes: int) -> bytes:
         return await self._recv(max_bytes)
     
     async def send(self, data: bytes) -> None:
