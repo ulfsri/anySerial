@@ -77,6 +77,9 @@ class PosixSerialStream(AbstractSerialStream):
     async def discard_input(self) -> None:
         termios.tcflush(self.fd, termios.TCIFLUSH)
 
+    async def send_eof(self) -> None:
+        pass
+
     async def discard_output(self) -> None:
         termios.tcflush(self.fd, termios.TCOFLUSH)
 

@@ -117,18 +117,25 @@ class AbstractSerialStream(ByteStream, ABC):
                     await anyio.lowlevel.checkpoint()
                 total_sent = 0
                 while total_sent < len(data):
-                    await self._wait_writable()
-                    with data[total_sent:] as remaining_data:
-                        sent = await self._send(remaining_data)
-                        total_sent += sent
+                    with self._send_resource_guard:
+                        with data[total_sent:] as remaining_data:
+                            sent = await self._send(remaining_data)
+                            total_sent += sent
 
-    @abstractmethod
-    async def get_flow_control(self) -> FlowControl:
-        pass
+    # @abstractmethod
+    # async def get_flow_control(self) -> FlowControl:
+    #     pass
 
-    @abstractmethod
-    async def set_flow_control(self, flow_control: FlowControl) -> None:
-        pass
+    # @abstractmethod
+    # async def set_flow_control(self, flow_control: FlowControl) -> None:
+    #     pass
+
+    async def recieve(self, max_bytes: int) -> bytes:
+        return await self._recv(max_bytes)
+    
+    async def send(self, data: bytes) -> None:
+        await self._send(memoryview(data))
+        return
 
     @abstractmethod
     async def _recv(self, max_bytes: int) -> bytes:
@@ -138,6 +145,6 @@ class AbstractSerialStream(ByteStream, ABC):
     async def _send(self, data: memoryview) -> int:
         pass
 
-    @abstractmethod
-    async def _wait_writable(self) -> None:
-        pass
+    # @abstractmethod
+    # async def _wait_writable(self) -> None:
+    #     pass
