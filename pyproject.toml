@@ -45,8 +45,12 @@ extra-dependencies = [
   "types-redis",
   "pylint",
 ]
+
 [tool.hatch.envs.types.scripts]
 check = "mypy --install-types --non-interactive {args:src/anyserial tests}"
+
+[publish.index.repos.main]
+url = "https://upload.pypi.org/legacy/"
 
 [tool.coverage.run]
 source_pkgs = ["anyserial", "tests"]
