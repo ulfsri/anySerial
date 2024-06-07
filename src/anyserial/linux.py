@@ -1,3 +1,10 @@
+# SPDX-FileCopyrightText: 2024-present GraysonBellamy <grayson.bellamy@ul.org>
+#
+# Parts of this file are based on the Python serial library by Chris Liechti (C) 2001-2020 Chris Liechti <cliechti@gmx.net> licensed under the BSD 3-Clause License
+# and trio_pyserial by Jörn Heissler (C) 2020 Jörn Heissler licensed under the BSD 3-Clause License
+#
+# SPDX-License-Identifier: MIT
+
 import array
 import fcntl
 import termios

@@ -4,16 +4,22 @@
 
 import os
 import sys
+from typing import Optional
+from .linux import LinuxSerialStream
+from .darwin import DarwinSerialStream
+from .bsd import BSDSerialStream
+from .posix import PosixSerialStream
+SerialStream : Optional[type[LinuxSerialStream | DarwinSerialStream | BSDSerialStream | PosixSerialStream]] = None
 
 if os.name == "posix":
     plat = sys.platform.lower()
     if plat.startswith("linux"):
-        from .linux import LinuxSerialStream as SerialStream
+        SerialStream = LinuxSerialStream
     elif plat.startswith("darwin"):
-        from .darwin import DarwinSerialStream as SerialStream
+        SerialStream = DarwinSerialStream
     elif any(plat.startswith(term) for term in ["bsd", "freebsd", "netbsd", "openbsd"]):
-        from .bsd import BSDSerialStream as SerialStream
+        SerialStream = BSDSerialStream
     else:
-        from .posix import PosixSerialStream as SerialStream
+        SerialStream = PosixSerialStream
 else:
     raise NotImplementedError(f"Platform '{os.name}' not supported")
