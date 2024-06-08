@@ -106,7 +106,7 @@ class AbstractSerialStream(ByteStream, ABC):
     async def send_break(self, duration: float = 0.25) -> None:
         pass
 
-    async def recieve_some(self, max_bytes: int) -> bytes:
+    async def receive_some(self, max_bytes: int) -> bytes:
         with self._recv_resource_guard:
             return await self._recv(max_bytes)
 
