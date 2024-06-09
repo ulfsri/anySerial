@@ -7,8 +7,8 @@
 
 import fcntl
 import anyio
+import array
 import os
-import socket
 import termios
 from struct import pack, unpack
 from typing import Dict, Optional
@@ -73,6 +73,24 @@ class PosixSerialStream(AbstractSerialStream):
         fd = self._fd
         self._fd = None
         os.close(fd)
+
+    def set_low_latency_mode(self, low_latency : bool = True):
+        buf = array.array('i', [0] * 32)
+
+        try:
+            # get serial_struct
+            fcntl.ioctl(self.fd, termios.TIOCGSERIAL, buf)
+
+            # set or unset ASYNC_LOW_LATENCY flag
+            if low_latency:
+                buf[4] |= 0x2000
+            else:
+                buf[4] &= ~0x2000
+
+            # set serial_struct
+            fcntl.ioctl(self.fd, termios.TIOCSSERIAL, buf)
+        except IOError as e:
+            raise ValueError('Failed to update ASYNC_LOW_LATENCY flag to {}: {}'.format(low_latency, e))
 
     async def discard_input(self) -> None:
         termios.tcflush(self.fd, termios.TCIFLUSH)
