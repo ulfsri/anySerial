@@ -106,7 +106,7 @@ class PosixSerialStream(AbstractSerialStream):
 
     async def _send(self, data: memoryview) -> int:
         # Need to rewrite this so we don't have to create socket each time. Trio supports passing in file descriptor directly but anyio does not.
-        await anyio.wait_socket_writable(self.fd)
+        # await anyio.wait_socket_writable(self.fd)
         return os.write(self.fd, data)
 
     async def _recv(self, max_bytes: int) -> bytes:
