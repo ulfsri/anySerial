@@ -131,7 +131,7 @@ class AbstractSerialStream(ByteStream, ABC):
 
     async def receive(self, max_bytes: int = 1) -> bytes:
         return await self._recv(max_bytes)
-    
+
     async def send(self, data: bytes) -> None:
         await self._send(memoryview(data))
         return

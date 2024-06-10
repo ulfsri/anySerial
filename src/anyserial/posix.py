@@ -74,8 +74,8 @@ class PosixSerialStream(AbstractSerialStream):
         self._fd = None
         os.close(fd)
 
-    def set_low_latency_mode(self, low_latency : bool = True):
-        buf = array.array('i', [0] * 32)
+    def set_low_latency_mode(self, low_latency: bool = True):
+        buf = array.array("i", [0] * 32)
 
         try:
             # get serial_struct
@@ -90,7 +90,11 @@ class PosixSerialStream(AbstractSerialStream):
             # set serial_struct
             fcntl.ioctl(self.fd, termios.TIOCSSERIAL, buf)
         except IOError as e:
-            raise ValueError('Failed to update ASYNC_LOW_LATENCY flag to {}: {}'.format(low_latency, e))
+            raise ValueError(
+                "Failed to update ASYNC_LOW_LATENCY flag to {}: {}".format(
+                    low_latency, e
+                )
+            )
 
     async def discard_input(self) -> None:
         termios.tcflush(self.fd, termios.TCIFLUSH)

@@ -9,7 +9,10 @@ from .linux import LinuxSerialStream
 from .darwin import DarwinSerialStream
 from .bsd import BSDSerialStream
 from .posix import PosixSerialStream
-SerialStream : Optional[type[LinuxSerialStream | DarwinSerialStream | BSDSerialStream | PosixSerialStream]] = None
+
+SerialStream: Optional[
+    type[LinuxSerialStream | DarwinSerialStream | BSDSerialStream | PosixSerialStream]
+] = None
 
 if os.name == "posix":
     plat = sys.platform.lower()

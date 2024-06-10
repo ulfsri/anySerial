@@ -1,5 +1,5 @@
 #* Variables
-SHELL := /usr/bin/env bash
+SHELL := /bin/bash
 PYTHON := python
 PYTHONPATH := `pwd`
 
@@ -34,7 +34,7 @@ install:											## Install the project and
 
 .PHONY: pre-commit-install
 pre-commit-install:
-	poetry run pre-commit install
+	hatch run pre-commit install
 
 .PHONY: lint
 lint: 												## Runs pre-commit hooks; includes ruff linting, codespell, black
